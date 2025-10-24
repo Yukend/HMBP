@@ -205,3 +205,40 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+
+# Frontend JavaScript / Node.js artifacts and framework build/cache folders
+
+# Node modules and npm/yarn/pnpm logs
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment local overrides (keep local secrets out of VCS)
+.env.local
+.env.*.local
+
+# Framework-specific build outputs & caches
+.next/
+.next/cache/
+.next/static/
+.nuxt/
+.svelte-kit/
+.out/            # generic out directory used by some static exporters
+.vercel/
+.vercel/output/
+.gatsby/         # Gatsby cache/build helper (if present)
+public/          # Gatsby and other static site outputs
+.parcel-cache/
+.vite/
+
+# Bundler / cache files
+.parcel-cache/
+.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# PnP / Yarn 2+
+.pnp.cjs
+.pnp.js
