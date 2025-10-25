@@ -181,41 +181,367 @@ Each functional area (expenses, forecasting, social, marketplace) should exist a
 
 ---
 
-## 🧩 Suggested Enhancements (Post-MVP)
-- [ ] Voice-based command assistant (OpenAI Whisper integration)
-- [ ] Household group accounts (shared finances)
-- [ ] Offline-first mobile app using React Native
-- [ ] GraphQL API Gateway for multi-service aggregation
-- [ ] AI-driven budgeting coach with natural language insights
+## 🏗 Data Models & JSON Schema (Top 1% Expert Level)
 
----
+### **Audit Columns**
+All tables include:
 
-## 🔒 Security & Compliance
-- Use **JWT** for session management.
-- Apply **role-based access control (RBAC)**.
-- Implement **PII masking** in analytics tables.
-- Ensure compliance with **GDPR / HIPAA-like data policies** (future healthcare integrations possible).
-- Encrypt sensitive data at rest and in transit (TLS 1.3, AES-256).
+```json
+{
+  "created_at": "timestamp",
+  "created_by": "uuid",
+  "updated_at": "timestamp",
+  "updated_by": "uuid",
+  "deleted_at": "timestamp",
+  "deleted_by": "uuid",
+  "version": 1,
+  "source_system": "string",
+  "correlation_id": "uuid",
+  "change_reason": "string"
+}
 
----
+Users
+{
+  "user_id": "uuid",
+  "email": "string",
+  "display_name": "string",
+  "phone": "string",
+  "preferences": {},
+  "profile_metadata": {},
+  "audit": {}
+}
 
-## 📈 Long-Term Roadmap
-1. Transition from **monolithic MVP** → **modular microservice architecture**.
-2. Introduce **streaming analytics** (Kafka + ClickHouse) for real-time dashboards.
-3. Add **LLM-based assistants** for conversational insights:  
-   _“How much did I spend on groceries last month compared to last year?”_
-4. Build **AI-driven home economy advisor** — personalized suggestions for optimizing spend and savings.
+Categories
+{
+  "category_id": "uuid",
+  "code": "string",
+  "name": "string",
+  "parent_id": "uuid",
+  "attributes": {},
+  "audit": {}
+}
 
----
+Products
+{
+  "product_id": "uuid",
+  "sku": "string",
+  "name": "string",
+  "brand": "string",
+  "category_id": "uuid",
+  "attributes": {},
+  "quality_hint": "string",
+  "is_active": true,
+  "audit": {}
+}
 
-## 🧠 Closing Note
+Product Prices
+{
+  "price_id": "uuid",
+  "product_id": "uuid",
+  "price_type": "original|shop",
+  "currency": "string",
+  "amount_cents": 1000,
+  "valid_from": "timestamp",
+  "valid_to": "timestamp",
+  "shop_id": "uuid",
+  "metadata": {},
+  "audit": {}
+}
 
-> **A good product tracks. A great system learns.**  
-> HMS should not just record transactions — it should **understand** them, **predict** future behavior, and **enhance decision-making** for every household member.
+Price Offers
+{
+  "offer_id": "uuid",
+  "code": "string",
+  "name": "string",
+  "offer_type": "BUY_N_GET_M|DISCOUNT_PCT",
+  "start_at": "timestamp",
+  "end_at": "timestamp",
+  "eligibility": {},
+  "combinable": true,
+  "offer_items": [
+    {
+      "offer_item_id": "uuid",
+      "product_id": "uuid",
+      "qty_required": 1,
+      "qty_free": 0,
+      "discount_pct": 10,
+      "discount_cents": 0,
+      "metadata": {}
+    }
+  ],
+  "audit": {}
+}
 
-When built correctly, this project can evolve from a utility tool into an **AI-driven domestic financial intelligence platform**, empowering families to manage resources smarter, connect meaningfully, and plan better.
+Transactions
+{
+  "transaction_id": "uuid",
+  "user_id": "uuid",
+  "transaction_at": "timestamp",
+  "total_cents": 10000,
+  "currency": "string",
+  "payment_method": "string",
+  "metadata": {},
+  "items": [
+    {
+      "item_id": "uuid",
+      "product_id": "uuid",
+      "qty": 2,
+      "unit_original_cents": 5000,
+      "unit_shop_cents": 4800,
+      "unit_effective_cents": 4500,
+      "applied_offer_ids": ["uuid"],
+      "offer_snapshot": {},
+      "taxes_cents": 100,
+      "shipping_cents": 50,
+      "total_cents": 9100,
+      "metadata": {}
+    }
+  ],
+  "audit": {}
+}
 
----
+Marketplace Listings
+{
+  "listing_id": "uuid",
+  "seller_user_id": "uuid",
+  "product_id": "uuid",
+  "title": "string",
+  "description": "string",
+  "condition": "new|second-quality|refurbished",
+  "listing_price_cents": 5000,
+  "currency": "string",
+  "images": [],
+  "location": {},
+  "active": true,
+  "metadata": {},
+  "audit": {}
+}
 
-**Created with Precision & Purpose.**  
-_— Yukendiran K & GPT-5_
+Asset Register
+{
+  "asset_id": "uuid",
+  "owner_user_id": "uuid",
+  "name": "string",
+  "category_id": "uuid",
+  "purchase_price_cents": 200000,
+  "purchase_date": "date",
+  "current_estimated_value_cents": 180000,
+  "depreciation_method": "linear|custom",
+  "depreciation_rate": 0.05,
+  "metadata": {},
+  "audit": {}
+}
+
+🔹 Engineering Notes
+
+Every table follows audit column standards.
+
+Prices maintain original, shop, and effective units.
+
+Offers handle Buy N Get M and discount percentages.
+
+Transactions store applied offers and snapshots for reproducibility.
+
+JSON format is ideal for API definitions, ML pipelines, and schema validation.
+
+🔒 Security & Compliance
+
+JWT authentication
+
+Role-based access control (RBAC)
+
+PII masking in analytics tables
+
+Encryption in transit & at rest (TLS 1.3, AES-256)
+
+GDPR / HIPAA readiness for future health-data integrations
+
+📈 Long-Term Roadmap
+
+Transition from monolithic MVP → modular microservice architecture
+
+Introduce streaming analytics (Kafka + ClickHouse) for real-time dashboards
+
+Add LLM-based assistants for conversational insights
+
+Build AI-driven home economy advisor for personalized suggestions
+
+🧠 Closing Note
+
+A good product tracks. A great system learns.
+HMS should not just record transactions — it should understand them, predict future behavior, and enhance decision-making for every household member.
+
+Created with Precision & Purpose.
+— Yukendiran K & GPT-5 Users
+{
+  "user_id": "uuid",
+  "email": "string",
+  "display_name": "string",
+  "phone": "string",
+  "preferences": {},
+  "profile_metadata": {},
+  "audit": {}
+}
+
+Categories
+{
+  "category_id": "uuid",
+  "code": "string",
+  "name": "string",
+  "parent_id": "uuid",
+  "attributes": {},
+  "audit": {}
+}
+
+Products
+{
+  "product_id": "uuid",
+  "sku": "string",
+  "name": "string",
+  "brand": "string",
+  "category_id": "uuid",
+  "attributes": {},
+  "quality_hint": "string",
+  "is_active": true,
+  "audit": {}
+}
+
+Product Prices
+{
+  "price_id": "uuid",
+  "product_id": "uuid",
+  "price_type": "original|shop",
+  "currency": "string",
+  "amount_cents": 1000,
+  "valid_from": "timestamp",
+  "valid_to": "timestamp",
+  "shop_id": "uuid",
+  "metadata": {},
+  "audit": {}
+}
+
+Price Offers
+{
+  "offer_id": "uuid",
+  "code": "string",
+  "name": "string",
+  "offer_type": "BUY_N_GET_M|DISCOUNT_PCT",
+  "start_at": "timestamp",
+  "end_at": "timestamp",
+  "eligibility": {},
+  "combinable": true,
+  "offer_items": [
+    {
+      "offer_item_id": "uuid",
+      "product_id": "uuid",
+      "qty_required": 1,
+      "qty_free": 0,
+      "discount_pct": 10,
+      "discount_cents": 0,
+      "metadata": {}
+    }
+  ],
+  "audit": {}
+}
+
+Transactions
+{
+  "transaction_id": "uuid",
+  "user_id": "uuid",
+  "transaction_at": "timestamp",
+  "total_cents": 10000,
+  "currency": "string",
+  "payment_method": "string",
+  "metadata": {},
+  "items": [
+    {
+      "item_id": "uuid",
+      "product_id": "uuid",
+      "qty": 2,
+      "unit_original_cents": 5000,
+      "unit_shop_cents": 4800,
+      "unit_effective_cents": 4500,
+      "applied_offer_ids": ["uuid"],
+      "offer_snapshot": {},
+      "taxes_cents": 100,
+      "shipping_cents": 50,
+      "total_cents": 9100,
+      "metadata": {}
+    }
+  ],
+  "audit": {}
+}
+
+Marketplace Listings
+{
+  "listing_id": "uuid",
+  "seller_user_id": "uuid",
+  "product_id": "uuid",
+  "title": "string",
+  "description": "string",
+  "condition": "new|second-quality|refurbished",
+  "listing_price_cents": 5000,
+  "currency": "string",
+  "images": [],
+  "location": {},
+  "active": true,
+  "metadata": {},
+  "audit": {}
+}
+
+Asset Register
+{
+  "asset_id": "uuid",
+  "owner_user_id": "uuid",
+  "name": "string",
+  "category_id": "uuid",
+  "purchase_price_cents": 200000,
+  "purchase_date": "date",
+  "current_estimated_value_cents": 180000,
+  "depreciation_method": "linear|custom",
+  "depreciation_rate": 0.05,
+  "metadata": {},
+  "audit": {}
+}
+
+🔹 Engineering Notes
+
+Every table follows audit column standards.
+
+Prices maintain original, shop, and effective units.
+
+Offers handle Buy N Get M and discount percentages.
+
+Transactions store applied offers and snapshots for reproducibility.
+
+JSON format is ideal for API definitions, ML pipelines, and schema validation.
+
+🔒 Security & Compliance
+
+JWT authentication
+
+Role-based access control (RBAC)
+
+PII masking in analytics tables
+
+Encryption in transit & at rest (TLS 1.3, AES-256)
+
+GDPR / HIPAA readiness for future health-data integrations
+
+📈 Long-Term Roadmap
+
+Transition from monolithic MVP → modular microservice architecture
+
+Introduce streaming analytics (Kafka + ClickHouse) for real-time dashboards
+
+Add LLM-based assistants for conversational insights
+
+Build AI-driven home economy advisor for personalized suggestions
+
+🧠 Closing Note
+
+A good product tracks. A great system learns.
+HMS should not just record transactions — it should understand them, predict future behavior, and enhance decision-making for every household member.
+
+Created with Precision & Purpose.
+— Yukendiran K & GPT-5
