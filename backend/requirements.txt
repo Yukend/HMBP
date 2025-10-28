@@ -1,0 +1,26 @@
+# --- Core Web Framework ---
+fastapi[all]>=0.115.0
+uvicorn[standard]>=0.31.1
+
+# --- Database & ORM ---
+SQLAlchemy>=2.0.34
+psycopg2-binary>=2.9.9
+
+# --- Pydantic for validation ---
+pydantic[email]>=2.9.2
+pydantic-settings>=2.4.0
+
+# --- CORS support for frontend communication ---
+fastapi-cors>=0.0.6
+
+# --- Optional: For Alembic migrations (recommended) ---
+alembic>=1.13.3
+
+# --- Optional: For environment variable management ---
+python-dotenv>=1.0.1
+
+# --- Optional: For async PostgreSQL (if needed) ---
+asyncpg>=0.29.0
+
+passlib>=1.7.4
+python-jose[cryptography]>=3.3.0
