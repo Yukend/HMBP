@@ -1,45 +1,68 @@
 # app/api/v1/endpoints/auth.py
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from pydantic import BaseModel, EmailStr
 from app.db.base import get_db
 from app.models.user import User, UserProfile
-from app.schemas.user import UserCreate, UserResponse
-from app.core.security import create_access_token, verify_password
+from app.schemas.user import UserSignUp, UserResponse, Token
+from app.core.security import create_access_token, verify_password, get_password_hash
 from app.db.dependencies import get_current_user
+from app.core.logging import logger
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+# Response schema for signup/login
+class AuthResponse(BaseModel):
+    user: UserResponse
+    access_token: str
+    token_type: str = "bearer"
 
-@router.post("/signup", response_model=UserResponse)
-def signup(user_in: UserCreate, db: Session = Depends(get_db)):
+# Login request schema
+class LoginRequest(BaseModel):
+    username: EmailStr
+    password: str
+
+router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
+
+@router.post("/signup", response_model=AuthResponse)
+def signup(user_in: UserSignUp, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == user_in.email).first()
     if user:
         raise HTTPException(status_code=400, detail="Email already registered")
     new_user = User(
         email=user_in.email,
-        hashed_password=user_in.password  # ideally hash here
+        password_hash=get_password_hash(user_in.password)
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    return new_user
+    access_token = create_access_token({"sub": str(new_user.id)})
+    return {
+        "user": new_user,
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
 
 
-@router.post("/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.hashed_password):
+@router.post("/login", response_model=AuthResponse)
+def login(credentials: LoginRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == credentials.username).first()
+    if not user or not verify_password(credentials.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     access_token = create_access_token({"sub": str(user.id)})
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "user": user,
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
 
 
-# app/api/routes/auth.py
 @router.get("/me")
-def get_current_user_data(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    profile = db.query(UserProfile).filter(UserProfile.user_id == current_user.id).first()
-    if not profile:
-        # Return only base user info
-        return {"id": str(current_user.id), "email": current_user.email, "created_at": current_user.created_at}
-    return {**profile.__dict__, "email": current_user.email}
-
+def me(current_user: User = Depends(get_current_user)):
+    """Get current authenticated user info"""
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    return {
+        "id": str(current_user.id),
+        "email": current_user.email,
+        "created_at": current_user.created_at
+    }

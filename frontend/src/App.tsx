@@ -23,7 +23,6 @@ import Analytics from "./pages/Analytics";
 import Messages from "./pages/Messages";
 import CategoryLimits from "./pages/CategoryLimits";
 import Reminders from "./pages/Reminders";
-import UserDetailsForm from "./pages/UserDetailForm";
 
 const queryClient = new QueryClient();
 
@@ -35,7 +34,6 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<Auth />} />
-          <Route path="/user-details" element={<UserDetailsForm />} />
           <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
           <Route path="/grocery" element={<ProtectedRoute><Grocery /></ProtectedRoute>} />
           <Route path="/clothes" element={<ProtectedRoute><Clothes /></ProtectedRoute>} />
@@ -53,7 +51,6 @@ const App = () => (
             <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
             <Route path="/category-limits" element={<ProtectedRoute><CategoryLimits /></ProtectedRoute>} />
             <Route path="/reminders" element={<ProtectedRoute><Reminders /></ProtectedRoute>} />
-            
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

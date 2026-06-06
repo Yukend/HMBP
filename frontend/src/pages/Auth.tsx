@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { auth } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,10 +16,7 @@ const Auth = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const currentUser = fetch("http://localhost:8000/auth/me", {
-      method: "GET",
-      credentials: "include",
-    }).then(res => res.ok ? res.json() : null);
+    const currentUser = auth.getCurrentUser();
     if (currentUser) {
       navigate("/");
     }
@@ -29,61 +27,41 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8000/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      await auth.signUp(email, password);
+      toast({
+        title: "Success!",
+        description: "Account created successfully.",
       });
-      const user = await res.json();
-      navigate(`/user-details?userId=${user.id}`);
+      navigate("/");
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Error",
         description: error instanceof Error ? error.message : "Sign up failed",
       });
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
-
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8000/auth/signin", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ username: email, password }),
+      await auth.signIn(email, password);
+      toast({
+        title: "Welcome back!",
+        description: "Successfully signed in.",
       });
-
-      if (!res.ok) {
-        throw new Error("Invalid credentials");
-      }
-
-      const data = await res.json();
-
-      if (data.access_token) {
-        localStorage.setItem("token", data.access_token);
-        toast({
-          title: "Welcome back!",
-          description: "You’re now signed in 🎉",
-        });
-        navigate("/");
-      } else {
-        throw new Error("Login failed. No token received.");
-      }
+      navigate("/");
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Error",
         description: error instanceof Error ? error.message : "Sign in failed",
       });
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   return (
@@ -155,23 +133,6 @@ const Auth = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={6}
-                  />
-                </div>
-                <div className="space-y-3">
-                  <Label htmlFor="signup-confirm-password">Confirm Password</Label>
-                  <Input
-                    id="signup-confirm-password"
-                    type="password"
-                    placeholder="••••••••"
-                    required
-                    minLength={6}
-                    onChange={(e) => {
-                      if (e.target.value !== password) {
-                        e.target.setCustomValidity("Passwords do not match");
-                      } else {
-                        e.target.setCustomValidity("");
-                      }
-                    }}
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>

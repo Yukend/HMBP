@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { 
@@ -19,18 +19,34 @@ import {
   BarChart3,
   MessageCircle,
   Settings,
-  Bell
+  Bell,
+  Plus,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface LayoutProps {
   children: ReactNode;
 }
 
-const navItems = [
-  { path: "/", label: "Dashboard", icon: Wallet },
+const defaultSections = [
+  { path: "/", label: "Dashboard", icon: Wallet, removable: false },
+  { path: "/analytics", label: "Analytics", icon: BarChart3, removable: false },
+  { path: "/category-limits", label: "Category Limits", icon: Settings, removable: false },
+  { path: "/reminders", label: "Reminders", icon: Bell, removable: false },
+];
+
+const availableSections = [
   { path: "/grocery", label: "Grocery", icon: ShoppingCart },
   { path: "/clothes", label: "Clothes", icon: Shirt },
   { path: "/medical", label: "Medical", icon: Heart },
@@ -44,15 +60,54 @@ const navItems = [
   { path: "/social", label: "Social", icon: Users },
   { path: "/marketplace", label: "Marketplace", icon: ShoppingBag },
   { path: "/messages", label: "Messages", icon: MessageCircle },
-  { path: "/analytics", label: "Analytics", icon: BarChart3 },
-  { path: "/category-limits", label: "Category Limits", icon: Settings },
-  { path: "/reminders", label: "Reminders", icon: Bell },
 ];
 
 export const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [activePaths, setActivePaths] = useState<string[]>([]);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+
+  // All sections combined for lookup
+  const allSections = [...defaultSections, ...availableSections];
+
+  useEffect(() => {
+    const stored = localStorage.getItem("activeSectionPaths");
+    if (stored) {
+      setActivePaths(JSON.parse(stored));
+    } else {
+      const defaultPaths = defaultSections.map(s => s.path);
+      setActivePaths(defaultPaths);
+      localStorage.setItem("activeSectionPaths", JSON.stringify(defaultPaths));
+    }
+  }, []);
+
+  const activeSections = activePaths
+    .map(path => allSections.find(s => s.path === path))
+    .filter(Boolean);
+
+  const handleAddSection = (section: typeof availableSections[0]) => {
+    const newPaths = [...activePaths, section.path];
+    setActivePaths(newPaths);
+    localStorage.setItem("activeSectionPaths", JSON.stringify(newPaths));
+    setShowAddDialog(false);
+    toast({
+      title: "Section added",
+      description: `${section.label} has been added to your sidebar.`,
+    });
+  };
+
+  const handleRemoveSection = (path: string) => {
+    const newPaths = activePaths.filter(p => p !== path);
+    setActivePaths(newPaths);
+    localStorage.setItem("activeSectionPaths", JSON.stringify(newPaths));
+    const section = allSections.find(s => s.path === path);
+    toast({
+      title: "Section removed",
+      description: `${section?.label} has been removed from your sidebar.`,
+    });
+  };
 
   const handleLogout = () => {
     auth.signOut();
@@ -62,6 +117,10 @@ export const Layout = ({ children }: LayoutProps) => {
     });
     navigate("/auth");
   };
+
+  const availableToAdd = availableSections.filter(
+    (section) => !activePaths.includes(section.path)
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -79,12 +138,13 @@ export const Layout = ({ children }: LayoutProps) => {
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto p-4">
             <ul className="space-y-1">
-              {navItems.map((item) => {
+              {activeSections.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path;
+                const isRemovable = !defaultSections.find(d => d.path === item.path);
                 
                 return (
-                  <li key={item.path}>
+                  <li key={item.path} className="group relative">
                     <Link
                       to={item.path}
                       className={cn(
@@ -97,10 +157,57 @@ export const Layout = ({ children }: LayoutProps) => {
                       <Icon className="h-5 w-5" />
                       {item.label}
                     </Link>
+                    {isRemovable && (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleRemoveSection(item.path);
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10"
+                      >
+                        <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                      </button>
+                    )}
                   </li>
                 );
               })}
             </ul>
+
+            {/* Add Section Button */}
+            {availableToAdd.length > 0 && (
+              <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="w-full mt-4 justify-start gap-3">
+                    <Plus className="h-5 w-5" />
+                    Add Section
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add Section</DialogTitle>
+                    <DialogDescription>
+                      Choose a section to add to your sidebar
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-2 py-4">
+                    {availableToAdd.map((section) => {
+                      const Icon = section.icon;
+                      return (
+                        <Button
+                          key={section.path}
+                          variant="outline"
+                          className="justify-start gap-3"
+                          onClick={() => handleAddSection(section)}
+                        >
+                          <Icon className="h-5 w-5" />
+                          {section.label}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
           </nav>
 
           {/* Logout Button */}
